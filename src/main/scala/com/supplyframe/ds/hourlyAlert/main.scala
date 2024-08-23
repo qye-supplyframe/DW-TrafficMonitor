@@ -188,7 +188,7 @@ object main {
 
       sendAlertEmail(
         toEmail = List("qye@supplyframe.com"),
-        subject = s"($runDate) Orthogonal Hourly Server Traffic Alert - Minimum Traffic",
+        subject = s"($runDate $runHour:00) Orthogonal Hourly Server Traffic Alert - Minimum Traffic",
         oaHourlyDir = oaHourlyDir,
         trafficThreshold = trafficThreshold,
         dfString = Some(dfString)

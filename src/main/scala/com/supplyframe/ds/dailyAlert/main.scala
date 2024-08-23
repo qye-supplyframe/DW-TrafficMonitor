@@ -23,19 +23,15 @@ object main {
 
   val toEmail = List("qye@supplyframe.com")
 
-  def saveFiles(df: DataFrame, fn: String, TYPE: String): Unit = {
-
-    if (TYPE == "avro") {
-      df.coalesce(1).write.format("avro").mode("overwrite").save(fn)
-    } else if (TYPE == "csv") {
-      df.coalesce(1).write.mode("overwrite").option("header", "true").csv(fn + "_csv")
-    } else if (TYPE == "parquet") {
-      df.coalesce(1).write.format("parquet").mode("overwrite").save(fn)
-    } else {
-      df.write.format("avro").mode("overwrite").save(fn)
-      df.coalesce(1).write.mode("overwrite").option("header", "true").csv(fn + "_csv")
+  def saveFiles(df: DataFrame, fn: String, fileType: String): Unit = {
+    fileType.toLowerCase match {
+      case "avro" => df.coalesce(1).write.format("avro").mode("overwrite").save(fn)
+      case "csv" => df.coalesce(1).write.mode("overwrite").option("header", "true").csv(s"${fn}_csv")
+      case "parquet" => df.coalesce(1).write.format("parquet").mode("overwrite").save(fn)
+      case _ =>
+        df.write.format("avro").mode("overwrite").save(fn)
+        df.coalesce(1).write.mode("overwrite").option("header", "true").csv(s"${fn}_csv")
     }
-
   }
 
   def getDateRange(start: String, end: String): Seq[String] = {
@@ -67,7 +63,7 @@ object main {
     } else {
       Seq(prevMonthPath, runMonthPath)
     }
-    paths.foreach(println)
+//    paths.foreach(println)
 
     // read data
     val df = spark.read.parquet(paths: _*).filter(col("date") <= runDate
@@ -188,7 +184,7 @@ object main {
       collect_list("clicks").as("clicksList_day0_to_day7_before"),
       sum("clicks").alias("total_clicks")
     ).withColumn("clicksList_day0_to_day7_before",
-      concat_ws(" <- ", col("clicksList_day0_to_day7_before"))
+      concat_ws(", ", col("clicksList_day0_to_day7_before"))
     ).orderBy(desc("total_clicks")
     ).drop("total_clicks"
     )
@@ -203,25 +199,26 @@ object main {
         if (acc.columns.contains(colName)) acc else acc.withColumn(colName, lit(null))
       }
 
-    val allAlertPath =  s"$allAlertDir/*/p*"
     val fs = FileSystem.get(spark.sparkContext.hadoopConfiguration)
-    val path = new Path(allAlertPath)
+    val path = new Path(allAlertDir)
 
+    // Exit if the alert directory doesn't exist or is empty
     if (!fs.exists(path) || fs.globStatus(path).isEmpty) {
       println("---- No alert ----")
       return
     }
 
-    // Read CSV files and standardize columns
+    // Collect all unique columns from CSV files
+    val allAlertPath =  s"$allAlertDir/*/p*"
     val allColumns = spark.sparkContext.wholeTextFiles(allAlertPath).map(_._1).collect().map(
       filePath => spark.read.option("header", "true").csv(filePath)
     ).foldLeft(Set.empty[String])((cols, df) => cols ++ df.columns
     ).toSeq
 
+    // Standardize DataFrames and union them
     val standardizedDataFrames = spark.sparkContext.wholeTextFiles(allAlertPath).map(_._1).collect().map(
       filePath => addMissingColumns(spark.read.option("header", "true").csv(filePath), allColumns)
     )
-
     val unionedDataFrame = standardizedDataFrames.reduce(_ unionByName _)
 
     // Reorder and sort columns
@@ -233,8 +230,7 @@ object main {
     val dfString = SparkUtils.showString(sortedDf, numRow, false)
 //   val body = s"Below is a list of daily traffic that reduced dramatically based on historical trends (21 days):\n $dfString"
 
-    val body =
-      s"""
+    val body = s"""
           |
           |Hi Team,
           |
@@ -258,14 +254,14 @@ object main {
           |
           |Best,
           |Data Platform Engineer Team
-          |"""
+          |""".stripMargin
+
     println("---- send daily alert emails ----")
     SparkUtils.sendEmail(toEmail, subject, body)
 
   }
 
   def main(args: Array[String]): Unit = {
-
 
     val conf = new SparkConf().setMaster("yarn")
     conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -290,11 +286,10 @@ object main {
     val runDate = args(0)
     val outputPath = args(1)
 
-    //    val runDate = "2024-02-14"
-    //    val outputPath = "/user/qye/adhoc_detect_system_outage/QA_traffic_alert"
-//      println(runDate)
+//    val runDate = "2024-02-14"
+//    val outputPath = "/user/qye/adhoc_detect_system_outage/QA_traffic_alert"
 
-    println("---- get ecommerce data for the past 21 days ---- ")
+    println(s"----$runDate get ecommerce data for the past 21 days ---- ")
     val (ecomm21days, allDatesDF) = getRawDataPrev21Days(spark, runDate)
 
 //      println("---- check each granularity ----")
@@ -358,7 +353,7 @@ object main {
 
     val runDateOutput = runDate.replace("-", "_")
     val subject = s"($runDate) eCommerceLayer Daily Traffic Alert - Significant Drops"
-    val allAlertDir =  s"$outputPath/alert/$runDateOutput"
+    val allAlertDir = s"$outputPath/alert/$runDateOutput"
 
     sendDailyAlertEmail(spark, subject, toEmail, allAlertDir)
 

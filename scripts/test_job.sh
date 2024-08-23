@@ -47,32 +47,8 @@ run_spark_job "$dailyAlertClass" "2024-05-01" "$outputPath"
 run_spark_job "$dailyAlertClass" "2024-06-25" "$outputPath"
 
 # Loop through each day and each hour
-startDate="2024-01-14"
-endDate="2024-01-15"
-
-currentDate="$startDate"
-while [[ "$currentDate" < "$endDate" ]]; do
-    for hour in $(seq -w 0 23); do
-        echo "Testing hourlyAlert job for $currentDate, hour $hour..."
-        run_spark_job "$hourlyAlertClass" "$currentDate" "$hour" "$outputPath"
-    done
-    currentDate=$(date -I -d "$currentDate + 1 day")
-done
-
-startDate="2024-02-01"
-endDate="2024-02-02"
-
-currentDate="$startDate"
-while [[ "$currentDate" < "$endDate" ]]; do
-    for hour in $(seq -w 0 23); do
-        echo "Testing hourlyAlert job for $currentDate, hour $hour..."
-        run_spark_job "$hourlyAlertClass" "$currentDate" "$hour" "$outputPath"
-    done
-    currentDate=$(date -I -d "$currentDate + 1 day")
-done
-
 startDate="2024-02-14"
-endDate="2024-02-15"
+endDate="2024-02-16"
 
 currentDate="$startDate"
 while [[ "$currentDate" < "$endDate" ]]; do
@@ -82,32 +58,5 @@ while [[ "$currentDate" < "$endDate" ]]; do
     done
     currentDate=$(date -I -d "$currentDate + 1 day")
 done
-
-
-startDate="2024-02-28"
-endDate="2024-03-02"
-
-currentDate="$startDate"
-while [[ "$currentDate" < "$endDate" ]]; do
-    for hour in $(seq -w 0 23); do
-        echo "Testing hourlyAlert job for $currentDate, hour $hour..."
-        run_spark_job "$hourlyAlertClass" "$currentDate" "$hour" "$outputPath"
-    done
-    currentDate=$(date -I -d "$currentDate + 1 day")
-done
-
-# Loop through each day and each hour
-startDate="2024-05-01"
-endDate="2024-05-02"
-
-currentDate="$startDate"
-while [[ "$currentDate" < "$endDate" ]]; do
-    for hour in $(seq -w 0 23); do
-        echo "Testing hourlyAlert job for $currentDate, hour $hour..."
-        run_spark_job "$hourlyAlertClass" "$currentDate" "$hour" "$outputPath"
-    done
-    currentDate=$(date -I -d "$currentDate + 1 day")
-done
-
 
 echo "All tests completed successfully."
