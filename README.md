@@ -7,7 +7,9 @@
 ## Features
 
 - **Hourly Data Monitoring**: Monitors orthogonal hourly traffic data to identify missiing directories or minimum traffic.
+  - **Granularity**: country, (country, website), (country, website, action), (country, website, action, zone)
 - **Daily Data Analysis**: Monitors eCommerceLayer daily traffic data for significant drops in traffic.
+  - **Granularity**: server
 - **Alert System**: Sends alert emails when significant drops in traffic are detected.
 
 ## Getting Started
