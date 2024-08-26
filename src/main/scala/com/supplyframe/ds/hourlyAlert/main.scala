@@ -14,7 +14,6 @@ object main {
 
   val oaHourlyDir = "/prod/etl/orthogonal_hourly"
   val trafficThreshold = 100
-  val toEmail = List("qye@supplyframe.com")
 
   def saveFiles(df: DataFrame, fn: String, fileType: String): Unit = {
     fileType.toLowerCase match {
@@ -123,6 +122,7 @@ object main {
     val runDate = args(0)
     val runHour = args(1)
     val outputPath = args(2)
+    val emailList = args(3).split(",").map(x => x.trim).toList
 
     println(s"---- $runDate, $runHour:00 ----")
 
@@ -149,7 +149,7 @@ object main {
       val errorMsg = curHourTrafficResult.left.getOrElse(preHourTrafficResult.left.get)
 
       sendAlertEmail(
-        toEmail = toEmail,
+        toEmail = emailList,
         subject = s"($runDate $runHour:00) Orthogonal Hourly Server Traffic Alert - Directory Missing",
         oaHourlyDir = oaHourlyDir,
         trafficThreshold = trafficThreshold,
@@ -187,7 +187,7 @@ object main {
       val dfString = SparkUtils.showString(alertDf, numRow, false)
 
       sendAlertEmail(
-        toEmail = List("qye@supplyframe.com"),
+        toEmail = emailList,
         subject = s"($runDate $runHour:00) Orthogonal Hourly Server Traffic Alert - Minimum Traffic",
         oaHourlyDir = oaHourlyDir,
         trafficThreshold = trafficThreshold,

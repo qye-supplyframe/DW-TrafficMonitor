@@ -21,8 +21,6 @@ object main {
   val minDomain = 10
   val ratioThreshold = 0.01
 
-  val toEmail = List("qye@supplyframe.com")
-
   def saveFiles(df: DataFrame, fn: String, fileType: String): Unit = {
     fileType.toLowerCase match {
       case "avro" => df.coalesce(1).write.format("avro").mode("overwrite").save(fn)
@@ -285,6 +283,7 @@ object main {
 
     val runDate = args(0)
     val outputPath = args(1)
+    val emailList = args(2).split(",").map(x => x.trim).toList
 
 //    val runDate = "2024-02-14"
 //    val outputPath = "/user/qye/adhoc_detect_system_outage/QA_traffic_alert"
@@ -355,7 +354,7 @@ object main {
     val subject = s"($runDate) eCommerceLayer Daily Traffic Alert - Significant Drops"
     val allAlertDir = s"$outputPath/alert/$runDateOutput"
 
-    sendDailyAlertEmail(spark, subject, toEmail, allAlertDir)
+    sendDailyAlertEmail(spark, subject, emailList, allAlertDir)
 
   }
 }
